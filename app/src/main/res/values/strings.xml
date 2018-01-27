@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">PlayingWithViews</string>
+    <string name="speech_prompt">speech prompt</string>
+</resources>
