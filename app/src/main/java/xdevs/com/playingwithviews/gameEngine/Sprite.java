@@ -68,7 +68,7 @@ public abstract class Sprite {
 
 
 
-    public int getLife() {
+    public synchronized int getLife() {
         return life;
     }
 
@@ -91,7 +91,7 @@ public abstract class Sprite {
     public void setCords(Point cords) {
         this.cords = cords;
     }
-    public void causeDamage(int damage) {
+    public synchronized void causeDamage(int damage) {
         if(status == Status.ALIVE) {
             if((life-=damage) <= 0) {
                 status = Status.DEAD;
