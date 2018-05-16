@@ -114,16 +114,11 @@ public final class EnemyPlane extends Sprite {
     public void causeDamageToHumanPlayer() {
         final List<Sprite> collidedWith = gameView.planesAndCollisionHandler.isCollidedWith(this);
         for(Sprite sprite:collidedWith) {
-            System.out.println("START ---------------------------------------------------------------");
-            System.out.println("Enemy Plane is " + this.toString());
-
             if(sprite instanceof HumanPlane) {
                 sprite.causeDamage(life);
                 this.causeDamage(life);
                 gameView.addScore(10);
-                System.out.println("yes collided with human player");
             }
-            System.out.println("END ---------------------------------------------------------------");
         }
     }
 

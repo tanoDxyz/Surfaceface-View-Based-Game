@@ -31,7 +31,7 @@ public abstract class Sprite {
         }
 
         Sprite other  = (Sprite) object;
-        return (name.equalsIgnoreCase(other.name) && cords.equals(other.cords) && !( other instanceof EnemyPlane));
+        return (name.equalsIgnoreCase(other.name) && cords.equals(other.cords));
     }
     public Sprite(GameView gameView , String name, Bitmap bitmap, Point cords) {
 
@@ -68,11 +68,12 @@ public abstract class Sprite {
 
 
 
-    public synchronized int getLife() {
+    public  synchronized int getLife() {
         return life;
     }
 
-    public void setLife(int life) {
+    public  synchronized void setLife(int life) {
+
         this.life = life;
     }
 
@@ -91,21 +92,33 @@ public abstract class Sprite {
     public void setCords(Point cords) {
         this.cords = cords;
     }
-    public synchronized void causeDamage(int damage) {
+    public  void causeDamage(int damage) {
         if(status == Status.ALIVE) {
-            if((life-=damage) <= 0) {
-                status = Status.DEAD;
+            synchronized (this) {
+                if(damage <= 0 ) {
+                    return;
+                }
+                if ((life -= damage) <= 0) {
+                    status = Status.DEAD;
+                }
             }
         }
     }
 
-    public void kill() {
+    public  void kill() {
         life = 0;
         status = Status.DEAD;
     }
 
 
 
+    public  Status getStatus() {
+        return this.status;
+    }
+
+    public  void setStatus(Status status) {
+        this.status = status;
+    }
 
     public Point getCurrentCoordinates() {
         return this.cords;

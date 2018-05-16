@@ -26,6 +26,7 @@ public class VoiceRecognitionActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         startActivity(new Intent(this,GameActivity.class));
+        finish();
         resultTextView = findViewById(R.id.resultTextView);
 
 

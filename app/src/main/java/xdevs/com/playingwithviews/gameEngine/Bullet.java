@@ -39,7 +39,6 @@ public final class Bullet extends Sprite {
     public void setYSpeed(int speed) {
         this.ySpeed = speed;
     }
-
     public void setBulletMotion(Motion mt) {
         this.motion = mt;
     }

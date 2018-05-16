@@ -3,7 +3,9 @@ package xdevs.com.playingwithviews.gameEngine;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Point;
+import android.os.Handler;
 import android.util.AttributeSet;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
@@ -11,6 +13,7 @@ import android.view.SurfaceView;
 import android.view.View;
 import android.view.View.OnTouchListener;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.security.SecureRandom;
 import java.util.ArrayList;
@@ -22,6 +25,7 @@ import xdevs.com.playingwithviews.R;
 import static android.view.MotionEvent.ACTION_DOWN;
 import static android.view.MotionEvent.ACTION_MOVE;
 import static android.view.MotionEvent.ACTION_UP;
+import static xdevs.com.playingwithviews.gameEngine.Sprite.Status.ALIVE;
 
 /**
  * Created by syedt on 1/24/2018.
@@ -29,6 +33,8 @@ import static android.view.MotionEvent.ACTION_UP;
 
 public final class GameView extends SurfaceView implements  SurfaceHolder.Callback,OnTouchListener {
     private HumanPlane humanPlane;
+    private int humanPlaneWidth;
+    private int humanPlaneHeight;
     private long score;
     public static final  SecureRandom rndG = new SecureRandom();
     public static long instanceCounter = 0;
@@ -36,6 +42,9 @@ public final class GameView extends SurfaceView implements  SurfaceHolder.Callba
     public int gameViewHeight;
     private TextView scoreView;
     private TextView playerLifeView;
+    private final Object scoreLock = new Object();
+    private DisplayMetrics displayMetrics;
+    private Handler handler = new Handler();
     protected final PlanesAndCollisionHandler planesAndCollisionHandler = new PlanesAndCollisionHandler();
 
     private static final String TAG  = "customSurfaceHolder";
@@ -55,6 +64,9 @@ public final class GameView extends SurfaceView implements  SurfaceHolder.Callba
         setOnTouchListener(this);
         planesAndCollisionHandler.addHumanPlayer(humanPlane = new HumanPlane(this,"human", R.drawable.v_f22));
         humanPlane.setLife(1000);
+        displayMetrics = this.getResources().getDisplayMetrics();
+        humanPlaneWidth  = humanPlane.getWidth();
+        humanPlaneHeight = humanPlane.getHeight();
     }
 
     public void setPlayerLifeView(TextView view) {
@@ -65,14 +77,15 @@ public final class GameView extends SurfaceView implements  SurfaceHolder.Callba
         this.scoreView = view;
     }
     public void addScore(int score) {
-        this.score +=score;
+        synchronized (scoreLock) {
+            this.score += score;
+        }
     }
 
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
         Log.i(TAG, "surfaceCreated: ");
         try {
-            System.gc();
             gameViewWidth = getMeasuredWidth();
             gameViewHeight = getMeasuredHeight();
             gameLoopThread = new GameLoopThread(this,60); //60fps
@@ -88,7 +101,6 @@ public final class GameView extends SurfaceView implements  SurfaceHolder.Callba
 
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
-        System.gc();
         gameLoopThread.setRunning(false);
         boolean retry = true;
         while (retry) {
@@ -99,10 +111,22 @@ public final class GameView extends SurfaceView implements  SurfaceHolder.Callba
         }
     }
 
+    //todo enemy planes drawing
     public void draw(Canvas canvas) {
         super.draw(canvas);
-        for(Sprite sprite: planesAndCollisionHandler.getNewPlanesAndRemoveOldOnes()) {
-            sprite.onDraw(canvas);
+        if(humanPlane.getLife() > 0) {
+            for (Sprite sprite : planesAndCollisionHandler.getNewPlanesAndRemoveOldOnes()) {
+                sprite.onDraw(canvas);
+            }
+        }else {
+
+            handler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    humanPlane.setStatus(ALIVE);
+                    humanPlane.setLife(1000);
+                }
+            }, 1000);
         }
     }
 
@@ -124,6 +148,13 @@ public final class GameView extends SurfaceView implements  SurfaceHolder.Callba
                 break;
             case ACTION_MOVE:
                 if(isTouched) {
+
+                    if(x + humanPlaneWidth <= 5
+                            || x + humanPlaneWidth >= displayMetrics.widthPixels - 5
+                            || y + humanPlaneHeight <= 5
+                            || y + humanPlaneHeight >= displayMetrics.heightPixels -5) {
+                        return true;
+                    }
                     this.humanPlane.setCords(new Point(x,y));
                 }
                 break;
@@ -137,11 +168,13 @@ public final class GameView extends SurfaceView implements  SurfaceHolder.Callba
 
     public void onDraw(Canvas canvas) {
         humanPlane.onDraw(canvas);
-        this.post(new Runnable() {
+        handler.post(new Runnable() {
             @Override
             public void run() {
                 playerLifeView.setText("Your Life " + humanPlane.getLife());
-                scoreView.setText("Your Score " + score);
+                synchronized (scoreLock) {
+                    scoreView.setText("Your Score " + score);
+                }
             }
         });
     }
@@ -160,7 +193,7 @@ public final class GameView extends SurfaceView implements  SurfaceHolder.Callba
             final int noOfPlanesToCreate = rndG.nextInt(3) + 1;
             for(int i=0;i<noOfPlanesToCreate;++i) {
                 final EnemyPlane enemyPlane = new EnemyPlane(GameView.this,"plane-"+(++instanceCounter),null);
-                enemyPlane.setYSpeed(rndG.nextInt(10)+1);
+                enemyPlane.setYSpeed(rndG.nextInt(5)+1);
                 enemyPlane.setCords(new Point(rndG.nextInt(gameViewWidth - enemyPlane.getWidth()) , 0));
                 planes.add(enemyPlane);
             }
@@ -199,7 +232,7 @@ public final class GameView extends SurfaceView implements  SurfaceHolder.Callba
 
         }
 
-        public List<Sprite> isCollidedWith(Sprite sourceSprite) {
+        public List<Sprite>  isCollidedWith(Sprite sourceSprite) {
 
             final int sourceSpriteWidth = sourceSprite.getWidth();
             final int sourceSpriteHeight = sourceSprite.getHeight();
@@ -216,6 +249,7 @@ public final class GameView extends SurfaceView implements  SurfaceHolder.Callba
                         &&sourceSprite.cords.y + sourceSpriteHeight >= targetSprite.cords.y)
                         &&(!sourceSprite.equals(targetSprite))
                         ){
+
                     collidedWithPlanes.add(targetSprite);
                 }
             }

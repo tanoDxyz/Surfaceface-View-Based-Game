@@ -5,6 +5,8 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Point;
 
+import xdevs.com.playingwithviews.R;
+
 import static xdevs.com.playingwithviews.gameEngine.GameView.instanceCounter;
 
 /**
@@ -35,7 +37,7 @@ public final class HumanPlane extends Sprite {
 
     }
 
-    private synchronized void fire() {
+    private  void fire() {
 
         for(int i=0;i<bullets.length;++i) {
             if(bullets[i] == null || bullets[i].isDestroyed()) {
@@ -47,7 +49,7 @@ public final class HumanPlane extends Sprite {
                 } else {
                     bulletLaunchPad = getRightBulletLaunchPad(cords.x,cords.y);
                 }
-                bullets[i] = new Bullet(gameView,"human_bullet-"+(++instanceCounter),bulletLaunchPad);
+                bullets[i] = new Bullet(gameView,"human_bullet-"+(++instanceCounter),R.drawable.magnum_bullet,bulletLaunchPad);
                 bullets[i].setLife(life);
                 bullets[i].setBulletMotion(Motion.UPWARD);
                 bullets[i].setYSpeed(3);
@@ -58,7 +60,7 @@ public final class HumanPlane extends Sprite {
 
 
     @Override
-    public synchronized void onDraw(Canvas canvas) {
+    public  void onDraw(Canvas canvas) {
 
         if(isDestroyed()) {
             return;
@@ -76,7 +78,7 @@ public final class HumanPlane extends Sprite {
 
 
 
-    public synchronized boolean isTouched(int x , int y) {
+    public  boolean isTouched(int x , int y) {
 
         return ((x >= this.cords.x && x <= this.cords.x + getWidth())
                 && (y >= this.cords.y && y <= this.cords.y + getHeight()));
