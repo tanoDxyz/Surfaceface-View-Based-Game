@@ -2,5 +2,5 @@
 planes comes firing red bullets and you shoot them with yours..
 See The Debug_V_ apk
 
-![screenshot](s.jpg)
+![screenshot](s.jpeg)
 
